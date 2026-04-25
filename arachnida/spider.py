@@ -20,8 +20,17 @@ def err(str, code):
 	exit(code)
 
 def parsing_bis():
+	if (args["r"] == False and args["l"] != None):
+		print("usage: ./spider [-h] [-r] [-l depth] [-p PATH] URL")
+		err("./spider: error: -l must be used with -r", 2)
 	print(args)
-	# if (args['r'])
+
+def handle_download_path():
+	try:
+		if (not os.path.exists(args["p"][0])):
+			os.makedirs(args["p"][0])
+	except OSError:
+		err("An error happened while handling the download path", 3)
 
 def get_images():
 	req = requests.get(sys.argv[1], headers={"User-Agent": "Magic Browser"})
@@ -31,11 +40,9 @@ def get_images():
 		if (img["src"].endswith(".jpeg") or img["src"].endswith(".jpg") or img["src"].endswith(".png") or img["src"].endswith(".gif") or img["src"].endswith(".bmp")):
 			images_links.append(img["src"])
 
-
 def main():
 	parsing_bis()
-	# get_images()
-	
+	handle_download_path()
 	
 if (__name__ == "__main__"):
 	main()
