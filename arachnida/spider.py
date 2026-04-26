@@ -87,7 +87,8 @@ def download_images():
 		try:
 			if (img.startswith("http://") or img.startswith("https://")):
 				img_data = requests.get(img, headers={"User-Agent": "Magic Browser"})
-				img_path = path + "spider-" + str(i) 
+				img_ext = os.path.splitext(img)
+				img_path = path + "spider-" + str(i) + img_ext[1]
 				with open(img_path, 'wb') as handler:
 					handler.write(img_data.content)
 				i += 1
