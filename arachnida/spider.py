@@ -106,7 +106,7 @@ def main():
 	handle_download_path()
 	get_all_links(0, recursive_depth, args["URL"])
 	download_images()
-	print("Successfully downloaded ", len(images_links) + "images")
+	print("Successfully downloaded ", str(len(images_links)) + " images")
 
 if (__name__ == "__main__"):
 	main()
