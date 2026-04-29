@@ -4,9 +4,8 @@ import argparse
 import string
 import base64
 import hmac
-import hashlib
 import time
-import sys
+import struct
 
 parser = argparse.ArgumentParser(prog="./ft_otp.py", description="./ft_otp.py generates One-Time-Passwords based on a provided 64 characters hexadecimal key", epilog="Made by @P0ulp1")
 parser.add_argument('-g', nargs=1, metavar="file.hex", required=False, help="A .hex file that contains a 64 characters hexadecimal password")
@@ -22,10 +21,6 @@ def parsing_bis():
 		err(1, "./ft_otp.py: error: You must use the -g or -k option")
 	elif (args['g'] and args['k']):
 		err(2, "./ft_otp.py: error: You must use either -g or -k but not both")
-	
-	# if (args['k'][0].endswith(".key") == False):
-	# 	err(5, "./ft_otp.key: error: The extension of the key file is invalid")
-
 
 def generate_key():
 	try:
@@ -34,36 +29,52 @@ def generate_key():
 
 		with open(args['g'][0], 'r') as file:
 			data = file.read()
+			data = data.replace('\n', '')
 			for char in data:
-				if (char not in string.hexdigits and char != '\n'):
+				if (char not in string.hexdigits):
 					err(3, "./ft_otp.py: error: The provided .hex file is invalid")
 
 			with open('otp.key', 'x') as keyfile:
-				datab32 = base64.b32encode(data.encode())
-				keyfile.write(str(datab32))
+				databytes = data.encode("utf-8")
+				datab32 = base64.b32encode(databytes)
+				datab32str = datab32.decode("utf-8")
+				keyfile.write(datab32str)
 
 	except FileExistsError as e:
 		print("[-] otp.key is already generated. Delete it and run the program again to generate a new one")
 	except BaseException as e:
 		print("An unexpected error occured: ", e)
-	
-def idkyet():
-	try:
-		with open('otp.key', 'r') as file:
 
-			counter = int(time.time() / 30)
-			counter_bytes = counter.to_bytes(8, sys.byteorder)
+def generate_otp():
+	try:
+		counter = int(time.time() / 30)
+		# counter_bytes = counter.to_bytes(8, sys.byteorder)
+		counter_bytes = struct.pack('>Q', counter)
+		
+		if (args['k'][0].endswith(".key") == False):
+			err(4, "./ft_otp.py: error: The extension of the key file is invalid")
+
+		with open(args['k'][0], 'r') as file:
+
 			key = file.read()
-			print(key)
-			decoded_key = base64.b32decode(key.encode())
-			print(decoded_key)
-			hashed = hmac.new(counter_bytes, None, 'sha1')
-			print(hashed.digest())
+			datab32bytes = key.encode()
+			datahex = base64.b32decode(datab32bytes)
+			hashed = hmac.new(datahex, counter_bytes, 'sha1')
+			hmac_bytes = hashed.digest()
+			offset = hmac_bytes[19] & 0xf
+			code = (int(hmac_bytes[offset])&0x7f)<<24 | \
+				(int(hmac_bytes[offset+1])&0xff)<<16 | \
+				(int(hmac_bytes[offset+2])&0xff)<<8 | \
+				(int(hmac_bytes[offset+3])&0xff)
+			code = code % 1000000
+			print(f"OTP_CODE: [{code}]")
 
 	except BaseException as e:
 		print("An unexpected error occured: ", e)
 
 if (__name__ == "__main__"):
 	parsing_bis()
-	generate_key()
-	idkyet()
+	if (args['g']):
+		generate_key()
+	elif (args['k']):
+		generate_otp()
