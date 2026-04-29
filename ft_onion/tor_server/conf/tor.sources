@@ -1,0 +1,5 @@
+Types: deb deb-src
+URIs: https://deb.torproject.org/torproject.org/
+Suites: bookworm
+Components: main
+Signed-By: /usr/share/keyrings/deb.torproject.org-keyring.gpg
