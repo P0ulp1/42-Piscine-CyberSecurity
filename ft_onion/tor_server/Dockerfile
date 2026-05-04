@@ -1,17 +1,30 @@
 FROM debian:bookworm
 
 #Install TOR and dependancies
-RUN apt update && apt upgrade -y && apt install --yes apt-transport-https gnupg wget bash
+RUN apt update && apt upgrade -y && apt install --yes apt-transport-https openssh-server gnupg wget bash
 COPY ./conf/tor.sources /etc/apt/sources.list.d/tor.sources
 RUN wget -qO- https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --dearmor | tee /usr/share/keyrings/deb.torproject.org-keyring.gpg >/dev/null
 RUN apt update && apt install --yes tor deb.torproject.org-keyring nginx less procps systemctl curl sudo
 
+#Configure SSH
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN useradd -m -s /bin/bash phautena
+RUN echo "phautena:pass1234" | chpasswd
+
 #Configure Nginx and TOR
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 COPY ./conf/torrc /etc/tor/torrc
+COPY ./conf/services.sh /tmp/services.sh
+RUN chmod +x /tmp/services.sh
 
+#Launch services
+# RUN service tor start
+# RUN service ssh start
+
+# CMD ["/tmp/services.sh"]
 CMD ["bash", "-c", "\
     service tor start && \
+    service ssh start && \
     nginx -g 'daemon off;' & \
     sleep 5 && \
     echo 'Adresse .onion:' && \
